@@ -32,14 +32,12 @@ void mergeSort(long int *arr, unsigned long int count)
 
     /* main iterative loop */
     for (s = 1; s < count; s = s*2) {
-	printf("h1\n");
 	fflush(stdout);
 	for(i = 0; i < count; i += (2*s)) {
-	    printf("h2\n");
-	    fflush(stdout);
 	    arr1 = arr + i;
 	    arr2 = arr + (i + s);
 	    count1 = count2 = s;
+
 	    if (i+s >= count) {
 		count1 = count - i;		/* override */
 		arr2 = NULL;			/* override */
@@ -64,8 +62,9 @@ void mergeSort(long int *arr, unsigned long int count)
 
 int main()
 {
-    long int i, j, n;
-
+    long int n;
+    unsigned long int i, j;
+    
     long int *arr = (long int *)malloc(MAX_ELEMENTS * sizeof(long int));
 
     i = 0;
@@ -75,14 +74,18 @@ int main()
 	arr[i++] = n;
     }
 
-    for(j=0; j<i; j++)
-	printf("num=%ld\n", arr[j]);
+    if (i > MAX_ELEMENTS) {
+	fprintf(stderr, "Too many numbers.\n");
+	return -1;
+    }
+    
+    /* for(j=0; j<i; j++) */
+    /* 	printf("num=%ld\n", arr[j]); */
 
     mergeSort(arr, i);
 
-    printf("sorted:\n");
     for(j=0; j<i; j++)
-	printf("num=%ld\n", arr[j]);
+	printf("%ld\n", arr[j]);
     
     
     return 0;
