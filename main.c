@@ -1,8 +1,20 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <pthread.h>
+
 
 #define MAX_ELEMENTS 10000000
+#define NUM_THREADS 2
+
+
+struct thread_data {
+    long int *arr;
+    unsigned long int count;
+};
+
+
+
 
 void mergeArrays(long int *arr1, long int count1, long int *arr2, long int count2, long int *merged)
 {
@@ -32,7 +44,6 @@ void mergeSort(long int *arr, unsigned long int count)
 
     /* main iterative loop */
     for (s = 1; s < count; s = s*2) {
-	fflush(stdout);
 	for(i = 0; i < count; i += (2*s)) {
 	    arr1 = arr + i;
 	    arr2 = arr + (i + s);
@@ -60,10 +71,26 @@ void mergeSort(long int *arr, unsigned long int count)
 }
 
 
+void *thread_function(void *arg)
+{
+    /* printf("thread called\n"); */
+    /* fflush(stdout); */
+    struct thread_data *tData = (struct thread_data *)arg;
+    
+    mergeSort(tData->arr, tData->count);
+    /* pthread_exit ??? */
+//    pthread_exit("");
+    return NULL;
+}
+
+
 int main()
 {
     long int n;
-    unsigned long int i, j;
+    unsigned long int i, arrLen;
+
+    pthread_t tid[2];
+    struct thread_data tData[NUM_THREADS];
     
     long int *arr = (long int *)malloc(MAX_ELEMENTS * sizeof(long int));
 
@@ -74,7 +101,9 @@ int main()
 	arr[i++] = n;
     }
 
-    if (i > MAX_ELEMENTS) {
+    arrLen = i;
+    
+    if (arrLen > MAX_ELEMENTS) {
 	fprintf(stderr, "Too many numbers.\n");
 	return -1;
     }
@@ -82,11 +111,36 @@ int main()
     /* for(j=0; j<i; j++) */
     /* 	printf("num=%ld\n", arr[j]); */
 
-    mergeSort(arr, i);
+    tData[0].arr = arr;
+    tData[0].count = arrLen/2;
 
-    for(j=0; j<i; j++)
-	printf("%ld\n", arr[j]);
+    tData[1].arr = arr + arrLen/2;
+    tData[1].count = arrLen - (int)arrLen/2;
+
+    pthread_create(&tid[0], NULL, thread_function, (void *)&tData[0]);
+    pthread_create(&tid[1], NULL, thread_function, (void *)&tData[1]);
+
+    /* for (i = 0; i < NUM_THREADS; i++) { */
+    /* 	mergeSort(arr, i); */
+	
+    /* } */
+
+    pthread_join(tid[0], NULL);
+    pthread_join(tid[1], NULL);
+
+    long int *merged = (long int *)malloc(sizeof(long int) * (tData[0].count + tData[0].count));
+
+    mergeArrays(tData[0].arr, tData[0].count, tData[1].arr, tData[1].count, merged);
+    /* copy */
+    memcpy(arr, merged, sizeof(long int) * (tData[0].count + tData[1].count));
+
+    free(merged);
+    merged = NULL;
     
+    for(i=0; i<arrLen; i++)
+	printf("%ld\n", arr[i]);
+    
+
     
     return 0;
 }
