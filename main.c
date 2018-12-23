@@ -42,8 +42,8 @@ void mergeArrays(long int *arr1,
 
 void *thread_function(void *arg)
 {
-    printf("thread called\n");
-    fflush(stdout);
+    /* printf("thread called\n"); */
+    /* fflush(stdout); */
     struct thread_data *tdata = (struct thread_data *)arg;
 
     mergeArrays(tdata->arr1, tdata->count1, tdata->arr2, tdata->count2, tdata->merged);
@@ -62,7 +62,7 @@ void *thread_function(void *arg)
 void mergeSort(long int *arr, unsigned long int count)
 {
     long int *arr1, *arr2;
-    unsigned long int count1, count2, s, i, n;
+    unsigned long int count1, count2, s, i;
 
     pthread_t tid[2];
 
@@ -78,9 +78,9 @@ void mergeSort(long int *arr, unsigned long int count)
         // printf("\n==h1\n");
         // fflush(stdout);
 
-        for (i = n = 0; i < count; i += (2*s)) {
-            printf("h2\n");
-            fflush(stdout);
+        for (i = thNum = 0; i < count; i += (2*s)) {
+            /* printf("h2\n"); */
+            /* fflush(stdout); */
 
             arr1 = arr + i;
             arr2 = arr + (i + s);
@@ -94,14 +94,13 @@ void mergeSort(long int *arr, unsigned long int count)
                 count2 = count - (i + s);       /* override */
             }
 
-	    thNum = n % 2;
-	    printf("thNum : %d\n", thNum);
-	    fflush(stdout);
+	    /* printf("thNum : %d\n", thNum); */
+	    /* fflush(stdout); */
 
 
 	    if (thread_flags[thNum] == 1) {
-		printf("inside\n");
-		fflush(stdout);
+		/* printf("inside\n"); */
+		/* fflush(stdout); */
 		
 		pthread_join(tid[thNum], NULL);
 		thread_flags[thNum] = 0;
@@ -124,16 +123,16 @@ void mergeSort(long int *arr, unsigned long int count)
             //     printf("%ld ", arr[p]);
             
             // printf("\n");
-            
-            n++;
+
+	    thNum = (thNum ? 0 : 1);
         }
 
-	printf("h3\n");
-	fflush(stdout);
+	/* printf("h3\n"); */
+	/* fflush(stdout); */
 	for (p = 0; p < NUM_THREADS; p++) {
 	    if (thread_flags[p] == 1) {
-		printf("p = %d\n", p);//d
-		fflush(stdout);
+		/* printf("p = %d\n", p);//d */
+		/* fflush(stdout); */
 		pthread_join(tid[p], NULL);
 		thread_flags[p] = 0;
 	    }
