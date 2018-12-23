@@ -59,12 +59,12 @@ void mergeSort(long int *arr, unsigned long int count)
     
     /* main iterative loop */
     for (s = 1; s < count; s = s*2) {
-        printf("\n==h1\n");
-        fflush(stdout);
+        // printf("\n==h1\n");
+        // fflush(stdout);
 
         for(i = n = 0; i < count; i += (2*s)) {
-            printf("h2\n");
-            fflush(stdout);
+            // printf("h2\n");
+            // fflush(stdout);
 
             arr1 = arr + i;
             arr2 = arr + (i + s);
@@ -80,8 +80,8 @@ void mergeSort(long int *arr, unsigned long int count)
             
             if (n%2 == 0) {
             	/* for second thread */
-                printf("h3\n");
-                fflush(stdout);
+                // printf("h3\n");
+                // fflush(stdout);
 
                 
                 merged1 = (long int *)malloc(sizeof(long int) * (count1 + count2));
@@ -121,11 +121,11 @@ void mergeSort(long int *arr, unsigned long int count)
 
             }
 
-            printf(">> ");
-            for (p=0; p<count; p++)
-                printf("%ld ", arr[p]);
+            // printf(">> ");
+            // for (p=0; p<count; p++)
+            //     printf("%ld ", arr[p]);
             
-            printf("\n");
+            // printf("\n");
             
             n++;
         }
@@ -135,18 +135,18 @@ void mergeSort(long int *arr, unsigned long int count)
             //printf("res=%d\n", res); //d
             //fflush(stdout);             
             
-            printf("tdata.i: %lu\n", tdata.i);
-            printf("count: %ld\n", (tdata.count1 + tdata.count2));
+            // printf("tdata.i: %lu\n", tdata.i);
+            // printf("count: %ld\n", (tdata.count1 + tdata.count2));
             memcpy(arr + tdata.i, tdata.merged, sizeof(long int) * (tdata.count1 + tdata.count2));
             free(tdata.merged);
             tdata.merged = merged1 = NULL;
         }
 
-        printf(">> after inner loop finish: \n");
-        for (p=0; p<count; p++)
-            printf("%ld ", arr[p]);
+        // printf(">> after inner loop finish: \n");
+        // for (p=0; p<count; p++)
+        //     printf("%ld ", arr[p]);
         
-        printf("\n");
+        // printf("\n");
     }
 }
 
@@ -178,7 +178,7 @@ int main()
     mergeSort(arr, i);
 
     /* print sorted */
-    printf("sorted:\n");
+    // printf("sorted:\n");
     for(j=0; j<i; j++)
         printf("%ld\n", arr[j]);
     
