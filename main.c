@@ -2,7 +2,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <pthread.h>
-
+#include <time.h>
+#include <math.h>
+#include <inttypes.h>
 
 #define MAX_ELEMENTS 10000000
 #define NUM_THREADS 2
@@ -14,6 +16,24 @@ struct thread_data {
 };
 
 
+void print_current_time_with_ms (void)
+{
+    long            ms; // Milliseconds
+    time_t          s;  // Seconds
+    struct timespec spec;
+
+    clock_gettime(CLOCK_REALTIME, &spec);
+    
+    s  = spec.tv_sec;
+    ms = round(spec.tv_nsec / 1.0e6); // Convert nanoseconds to milliseconds
+    if (ms > 999) {
+        s++;
+        ms = 0;
+    }
+    
+    fprintf(stderr, "Current time: %"PRIdMAX".%03ld seconds since the Epoch\n",
+           (intmax_t)s, ms);
+}
 
 
 void mergeArrays(long int *arr1, long int count1, long int *arr2, long int count2, long int *merged)
@@ -86,6 +106,8 @@ void *thread_function(void *arg)
 
 int main()
 {
+    print_current_time_with_ms();
+    
     long int n;
     unsigned long int i, arrLen;
 
@@ -107,6 +129,8 @@ int main()
 	fprintf(stderr, "Too many numbers.\n");
 	return -1;
     }
+
+    print_current_time_with_ms();
     
     /* for(j=0; j<i; j++) */
     /* 	printf("num=%ld\n", arr[j]); */
@@ -136,6 +160,8 @@ int main()
 
     free(merged);
     merged = NULL;
+
+    print_current_time_with_ms();
     
     for(i=0; i<arrLen; i++)
 	printf("%ld\n", arr[i]);
