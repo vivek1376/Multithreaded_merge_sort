@@ -5,16 +5,24 @@
 #include <time.h>
 #include <math.h>
 #include <inttypes.h>
+#include <sys/sysinfo.h>
 
 #define MAX_ELEMENTS 10000000
 #define NUM_THREADS 2
-
+#define THREADS_LIMIT 32
 
 struct thread_data {
     long int *arr;
     unsigned long int count;
 };
 
+struct thread_data2 {
+    long int *arr1;
+    long int *arr2;
+
+    unsigned long int count1;
+    unsigned long int count2;
+};
 
 void print_current_time_with_ms (void)
 {
@@ -38,6 +46,11 @@ void print_current_time_with_ms (void)
 
 void mergeArrays(long int *arr1, long int count1, long int *arr2, long int count2, long int *merged)
 {
+    /* printf("mergeArrays-h1\n"); */
+    /* fflush(stdout); */
+
+//    return;
+    
     long int i, j, m;
 
     for (i = j = m = 0; i < count1 && j < count2;) {
@@ -48,7 +61,7 @@ void mergeArrays(long int *arr1, long int count1, long int *arr2, long int count
 	}
     }
 
-    if (i>=count1)
+    if (i >= count1)
 	while(j<count2)
 	    merged[m++] = arr2[j++];
     else
@@ -103,18 +116,56 @@ void *thread_function(void *arg)
     return NULL;
 }
 
-
-int main()
+void *thread_function2(void *arg)
 {
+    /* printf("in thread2-h1\n"); */
+    /* fflush(stdout); */
+    
+    struct thread_data2 *tData = (struct thread_data2 *)arg;
+    
+    long int *merged = (long int *)malloc(sizeof(long int) * (tData->count1 + tData->count2));
+    
+    mergeArrays(tData->arr1, tData->count1, tData->arr2, tData->count2, merged);
+
+    /* printf("in thread2-h2\n"); */
+    /* fflush(stdout); */
+    /* copy */
+    /* printf("tData_arr1: %ld\n", tData->arr1[0]); */
+    /* fflush(stdout); */
+    /* printf("in thread2-h3\n"); */
+    /* fflush(stdout); */
+
+    memcpy(tData->arr1, merged, sizeof(long int) * (tData->count1 + tData->count2));
+    
+    /* printf("in thread2-h4\n"); */
+    /* fflush(stdout); */
+        
+    free(merged);
+    merged = NULL;
+    
+    return NULL;
+}
+
+int main(int argc, char **argv)
+{
+//    fprintf(stderr, "av: %d\n", get_nprocs());
+    
     print_current_time_with_ms();
     
     long int n;
-    unsigned long int i, arrLen;
+    unsigned long int i, j, arrLen, subArrSize;
 
-    pthread_t tid[2];
-    struct thread_data tData[NUM_THREADS];
+    const int numThreads = get_nprocs();
+
+    pthread_t tid[numThreads];
+    struct thread_data tData[numThreads];
+    struct thread_data2 tData2[numThreads];
+	
+    int *threadFlag = (int *)malloc(numThreads * sizeof(int));
+    memset(threadFlag, 0, numThreads * sizeof(int));
     
     long int *arr = (long int *)malloc(MAX_ELEMENTS * sizeof(long int));
+
 
     i = 0;
     while (scanf("%ld", &n) != EOF) {
@@ -135,38 +186,79 @@ int main()
     /* for(j=0; j<i; j++) */
     /* 	printf("num=%ld\n", arr[j]); */
 
-    tData[0].arr = arr;
-    tData[0].count = arrLen/2;
+    /* Divide array into as many sub-array as
+       the number of threads. */
+    for (i = 0, subArrSize = arrLen / numThreads ; i < numThreads; i++) {
+	tData[i].arr = arr + (i * subArrSize);
 
-    tData[1].arr = arr + arrLen/2;
-    tData[1].count = arrLen - (int)arrLen/2;
+	if (i == numThreads - 1) {
+	    tData[i].count = arrLen - (i * subArrSize);
+	} else {
+	    tData[i].count = subArrSize;
+	}
 
-    pthread_create(&tid[0], NULL, thread_function, (void *)&tData[0]);
-    pthread_create(&tid[1], NULL, thread_function, (void *)&tData[1]);
+	if (tData[i].count > 0) {
+	    pthread_create(&tid[i], NULL, thread_function, (void *)&tData[i]);
+	    threadFlag[i] = 1;
+	}
+    }
 
-    /* for (i = 0; i < NUM_THREADS; i++) { */
-    /* 	mergeSort(arr, i); */
+    for(i = 0; i< numThreads; i++) {
+	if (threadFlag[i] == 1) {
+	    pthread_join(tid[i], NULL);
+	    threadFlag[i] = 0;
+	}
+    }
+
+    /* long int *merged = (long int *)malloc(sizeof(long int) * (tData[0].count + tData[0].count)); */
+
+    /* mergeArrays(tData[0].arr, tData[0].count, tData[1].arr, tData[1].count, merged); */
+    /* /\* copy *\/ */
+    /* memcpy(arr, merged, sizeof(long int) * (tData[0].count + tData[1].count)); */
+
+    /* free(merged); */
+    /* merged = NULL; */
+
+    /* for(i=0; i<arrLen; i++) */
+    /* 	printf("%ld\n", arr[i]); */
+
 	
-    /* } */
+    j = numThreads;
+    while(j > 1) {
+	for (i = 0, subArrSize = arrLen / j; i < j / 2; i++) {
+	    tData2[i].arr1 = arr + (2 * i * subArrSize);
+	    tData2[i].count1 = subArrSize;
+	    
+	    tData2[i].arr2 = arr + (2 * i * subArrSize + subArrSize);
+	    
+	    if (i == ((j / 2) - 1)) {
+		tData2[i].count2 = arrLen - (2 * i * subArrSize + subArrSize);
+	    } else {
+		tData2[i].count2 = subArrSize;
+	    }
+	    
+	    if (tData2[i].count1 > 0 || tData2[i].count2 > 0) {
+		pthread_create(&tid[i], NULL, thread_function2, (void *)&tData2[i]);
+		threadFlag[i] = 1;
+	    }
+	}
 
-    pthread_join(tid[0], NULL);
-    pthread_join(tid[1], NULL);
+	for(i = 0; i < numThreads; i++) { /* i < j/2 ??? */
+	    if (threadFlag[i] == 1) {
+		pthread_join(tid[i], NULL);
+		threadFlag[i] = 0;
+	    }
+	}
 
-    long int *merged = (long int *)malloc(sizeof(long int) * (tData[0].count + tData[0].count));
-
-    mergeArrays(tData[0].arr, tData[0].count, tData[1].arr, tData[1].count, merged);
-    /* copy */
-    memcpy(arr, merged, sizeof(long int) * (tData[0].count + tData[1].count));
-
-    free(merged);
-    merged = NULL;
-
+	j = j / 2;
+    }
+    
     print_current_time_with_ms();
     
     for(i=0; i<arrLen; i++)
 	printf("%ld\n", arr[i]);
     
-
+    free(threadFlag);
     
     return 0;
 }
